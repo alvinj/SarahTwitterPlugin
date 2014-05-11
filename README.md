@@ -11,7 +11,7 @@ Files
 -----
 
 The jar file built by this project needs to be copied to the Sarah plugins directory.
-On my computer that directory is _/Users/al/Sarah/plugins/DDCurrentTime_.
+On my computer that directory is _/Users/al/Sarah/plugins/DDTwitter_.
 
 Files in that directory should be:
 
