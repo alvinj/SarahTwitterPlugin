@@ -11,6 +11,7 @@ import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import twitter4j.TwitterException
 import twitter4j.{Paging, Query, Twitter}
+import com.devdaily.sarah.actors.{ShowTextWindow, ShowTextWindowBriefly}
 
 /**
  * Get (a) the current weather or (b) the weather forecast.
@@ -29,7 +30,7 @@ class InteractiveTwitterClient extends SarahPlugin with TwitterBase {
   var twitterPhrase = "current trends"
  
   // this used to be in 'handlePhrase' (which was wrong)
-  implicit val system = ActorSystem("TwitterFutureSystem")
+//  implicit val system = ActorSystem("TwitterFutureSystem")
 
   // sarah callback
   def textPhrasesICanHandle: List[String] = {
@@ -49,10 +50,20 @@ class InteractiveTwitterClient extends SarahPlugin with TwitterBase {
 
   // sarah callback. handle our phrases when we get them.
   def handlePhrase(phrase: String): Boolean = {
-      if (phrase.trim.equalsIgnoreCase(twitterPhrase)) {
-          val f = Future { brain ! PleaseSay("Stand by.") }
-          brain ! PleaseSay(getCurrentTrends)
+      if (phrase.trim.matches("current trends*")) {
+          PluginUtils.runInThread {
+              brain ! PleaseSay("Stand by.")
+          }
+
+          PluginUtils.runInThread {
+              val currentTrends = getCurrentTrends
+              brain ! ShowTextWindowBriefly(currentTrends, 8000)
+              brain ! PleaseSay(currentTrends)
+              //val f3 = Future { brain ! ShowTextWindowBriefly(currentTrends, 5000) }
+          }
+
           true
+
       } else {
           false
       }
@@ -92,11 +103,13 @@ class InteractiveTwitterClient extends SarahPlugin with TwitterBase {
 
   private def convertTrendsToString(trends: Array[twitter4j.Trend]): String = {
       var sb = new scala.collection.mutable.StringBuilder
+      sb.append("<pre>\n")
       for (t <- trends) {
           val a = t.getName.replace("#", "")
           val b = splitCamelCaseStringIntoWords(a)
-          sb.append(b + ". \n")
+          sb.append(b + "\n")
       } 
+      sb.append("</pre>\n")
       sb.toString
   }
   
